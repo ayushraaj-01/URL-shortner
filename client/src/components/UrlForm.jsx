@@ -11,13 +11,17 @@ function UrlForm({ onShorten, isSubmitting, error, shortUrl, onCopy }) {
       return;
     }
 
-    await onShorten(longUrl);
-    setCopyMessage('');
+    try {
+      await onShorten(longUrl);
+      setCopyMessage('');
+    } catch {
+      setCopyMessage('');
+    }
   };
 
   const handleCopy = async () => {
-    await onCopy(shortUrl);
-    setCopyMessage('Copied to clipboard');
+    const copied = await onCopy(shortUrl);
+    setCopyMessage(copied ? 'Copied to clipboard' : 'Copy failed in this browser');
   };
 
   return (
