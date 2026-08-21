@@ -1,6 +1,6 @@
 import express from 'express';
 import { customAlphabet } from 'nanoid';
-import Url from '../models/User.js';
+import { createUrl, findUrlByCode, listUrls } from '../store.js';
 
 const router = express.Router();
 const generateCode = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
@@ -34,17 +34,11 @@ router.post('/shorten', async (req, res) => {
     }
 
     let shortCode = generateCode();
-    let existingUrl = await Url.findOne({ shortCode });
-
-    while (existingUrl) {
+    while (findUrlByCode(shortCode)) {
       shortCode = generateCode();
-      existingUrl = await Url.findOne({ shortCode });
     }
 
-    const url = await Url.create({
-      longUrl: normalizedLongUrl,
-      shortCode
-    });
+    const url = createUrl({ longUrl: normalizedLongUrl, shortCode });
 
     return res.status(201).json({
       message: 'Short URL created successfully.',
@@ -60,11 +54,11 @@ router.post('/shorten', async (req, res) => {
 
 router.get('/urls', async (req, res) => {
   try {
-    const urls = await Url.find().sort({ createdAt: -1 }).lean();
+    const urls = listUrls();
 
     const payload = urls.map((url) => ({
       ...url,
-      id: url._id,
+      id: url.id,
       shortUrl: buildShortUrl(req, url.shortCode)
     }));
 
